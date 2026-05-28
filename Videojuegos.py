@@ -12,7 +12,7 @@ class Servicio():
         self.Garantia = bool(Garantia)
                 
     def calcular_precio_final(self):
-        if self.TipoServicio == "Reparación":
+        if self.TipoServicio == "Reparación" or self.TipoServicio == "Mantenimiento":
             return (self.PrecioBase + self.ValorReparacion) * (self.TiempoEntrega * 0.5)
         else:
             return self.PrecioBase      
@@ -200,7 +200,7 @@ usuario2 = Usuario("Carmilla", "Mariaperez@example.com", 150.00)
 usuario1.saludar()#Llamada al metodo saludar al usuario1
 usuario2.saludar() # "" usuario2
 
-servicio1 = Servicio("Reparación de Consola", "Reparación", 500.00, 20.00, 7, False)
+servicio1 = Servicio("Reparación de Consola", "Reparación", 300.00, 20.00, 7, False)
 servicio2 = Servicio("Mantenimiento de PC", "Mantenimiento", 200.00, 0.00, 3, False  )
 servicio3 = Servicio("Garantia", "Reparación", 20.00, 10.00, 5, True)
 
