@@ -1,6 +1,33 @@
 from abc import ABC, abstractmethod
 
-# Clase de utilidades para validación
+#Clase servicio. garantia, precio base, tipo de servicio, valor de reparacion, tiempo de entrega, 
+# Metodo mostrar info, calcular precio final.
+class Servicio():
+    def __init__(self, NombreServicio, TipoServicio, PrecioBase, ValorReparacion, TiempoEntrega, Garantia):
+        self.NombreServicio = NombreServicio
+        self.TipoServicio = TipoServicio
+        self.PrecioBase = PrecioBase
+        self.ValorReparacion = ValorReparacion
+        self.TiempoEntrega = TiempoEntrega
+        self.Garantia = bool(Garantia)
+                
+    def calcular_precio_final(self):
+        if self.TipoServicio == "Reparación":
+            return (self.PrecioBase + self.ValorReparacion) * (self.TiempoEntrega * 0.5)
+        else:
+            return self.PrecioBase      
+        
+    def mostrar_info(self):
+        if self.Garantia == True:
+            return f"Garantia de 1 año para Consolas o Pc's\n Precio: ${self.calcular_precio_final():.2f}"
+        else:            
+            return f"Nombre del servicio: {self.NombreServicio}\nTipo de servicio: {self.TipoServicio}\nPrecio base: ${self.PrecioBase:.2f}\nValor de reparación: ${self.calcular_precio_final():.2f}\nTiempo de entrega: {self.TiempoEntrega} días."
+          
+
+
+        
+    
+#Clase validador para validar entradas del usuario
 class Validador:
     @staticmethod
     def obtener_numero(mensaje, tipo=int):
@@ -173,6 +200,10 @@ usuario2 = Usuario("Carmilla", "Mariaperez@example.com", 150.00)
 usuario1.saludar()#Llamada al metodo saludar al usuario1
 usuario2.saludar() # "" usuario2
 
+servicio1 = Servicio("Reparación de Consola", "Reparación", 500.00, 20.00, 7, False)
+servicio2 = Servicio("Mantenimiento de PC", "Mantenimiento", 200.00, 0.00, 3, False  )
+servicio3 = Servicio("Garantia", "Reparación", 20.00, 10.00, 5, True)
+
 def main():#Función principal con menú para la tienda de videojuegos
     
     #Se crean listas para uso mas facil de los juegos/usuarios
@@ -180,7 +211,8 @@ def main():#Función principal con menú para la tienda de videojuegos
     usuarios = [usuario1, usuario2]
     catalogo = [videojuego1, videojuego2, videojuego3,
                 consola1, consola2,
-                accesorio1, accesorio2]
+                accesorio1, accesorio2,
+                servicio1, servicio2, servicio3]
     
     #Menu principal + opciones del usuario
     while True:
