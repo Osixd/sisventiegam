@@ -14,11 +14,38 @@ def Conectar_bd():
         print("Error al conectar a la base de datos:", e)
         return None
     finally: 
-        conn.close()
+        #conn.close()
+        pass
     
     
-def Leer_datos(conn):
-    pass
+def Buscar_usuario(conn, x):
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM BDUSERS WHERE Nombre_Usuario = ?",(x))
+    if cursor.rowcount == 0:
+        print("Usuario no encontrado.")
+        interactuar = input("¿Deseas agregar un nuevo usuario? (s/n) ")
+        if interactuar.lower() == 's':
+            Agregar_usuario(conn,
+                            float(input("Ingresa un nombre para tu usuario: ")),
+                            float(input("Ingresa el correo a asociar tu cuenta: ")),
+                            float(input("Ingresa la contraseña para tu cuenta: ")),
+                            float(input("Ingresa el saldo inicial de tu cuenta: ")),
+                            "Usuario",
+                            input(r"Ingresa tu nombre(s): "),
+                            input("Ingresa tu primer apellido: "),
+                            input("Ingresa tu segundo apellido: ")
+                            )
+    rows = cursor.fetchall()
+    for row in rows:
+        print(row)
 
 
-Conectar_bd()
+def Agregar_usuario(conn, NombreUsuario, Correo, Contraseña, Saldo_Cuenta, Permisos, Nombres, Apellido1, Apellido2):
+    cursor = conn.cursor()
+    cursor.execute(r"INSERT INTO BDUSERS (Nombre_Usuario, Correo, Contraseña, Saldo_Cuenta, Permisos, Nombres, Apellido1, Apellido2) VALUES (?, ?, ?, ?, ?, ?, ?, ?)", (NombreUsuario, Correo, Contraseña, Saldo_Cuenta, Permisos, Nombres, Apellido1, Apellido2))
+    conn.commit()
+    print("Usuario agregado exitosamente.")
+
+conn = Conectar_bd()
+x = input("¿Qué usuario deseas buscar? ")
+Buscar_usuario(conn, x)
