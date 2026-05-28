@@ -21,7 +21,7 @@ def Conectar_bd():
 def Buscar_usuario(conn, x):
     cursor = conn.cursor()
     cursor.execute("SELECT * FROM BDUSERS WHERE Nombre_Usuario = ?",(x))
-    if cursor.rowcount == 0:
+    if cursor.fetchone() == None:
         print("Usuario no encontrado.")
         interactuar = input("¿Deseas agregar un nuevo usuario? (s/n) ")
         if interactuar.lower() == 's':
@@ -41,7 +41,7 @@ def Agregar_usuario(conn):
     Nombres = input("Ingrese su nombre(s): ")
     Apellido1 = input("Ingrese su primer apellido: ")
     Apellido2 = input("Ingrese su segundo apellido: ")
-    cursor.execute(r"INSERT INTO BDUSERS (Nombre_Usuario, Correo, Contraseña, Saldo_Cuenta, Permisos, Nombres, Apellido1, Apellido2) VALUES (?, ?, ?, ?, ?, ?, ?, ?)", (NombreUsuario, Correo, Contraseña, Saldo_Cuenta, Permisos, Nombres, Apellido1, Apellido2))
+    cursor.execute(r"INSERT INTO BDUSERS (Nombre_Usuario, Correo, Contraseña, Saldo_Cuenta, Permisos, Nombre(s), Apellido1, Apellido2) VALUES (?, ?, ?, ?, ?, ?, ?, ?)", (NombreUsuario, Correo, Contraseña, Saldo_Cuenta, Permisos, Nombres, Apellido1, Apellido2))
     conn.commit()
     print("Usuario agregado exitosamente.")
 
