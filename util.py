@@ -25,23 +25,22 @@ def Buscar_usuario(conn, x):
         print("Usuario no encontrado.")
         interactuar = input("¿Deseas agregar un nuevo usuario? (s/n) ")
         if interactuar.lower() == 's':
-            Agregar_usuario(conn,
-                            float(input("Ingresa un nombre para tu usuario: ")),
-                            float(input("Ingresa el correo a asociar tu cuenta: ")),
-                            float(input("Ingresa la contraseña para tu cuenta: ")),
-                            float(input("Ingresa el saldo inicial de tu cuenta: ")),
-                            "Usuario",
-                            input(r"Ingresa tu nombre(s): "),
-                            input("Ingresa tu primer apellido: "),
-                            input("Ingresa tu segundo apellido: ")
-                            )
+            Agregar_usuario(conn)
     rows = cursor.fetchall()
     for row in rows:
         print(row)
 
 
-def Agregar_usuario(conn, NombreUsuario, Correo, Contraseña, Saldo_Cuenta, Permisos, Nombres, Apellido1, Apellido2):
+def Agregar_usuario(conn):
     cursor = conn.cursor()
+    NombreUsuario = input("Ingrese el nombre de usuario: ")
+    Correo = input("Ingrese el correo electrónico: ")
+    Contraseña = input("Ingrese la contraseña: ")
+    Saldo_Cuenta = float(input("Ingrese el saldo inicial: "))
+    Permisos = "Usuario"
+    Nombres = input("Ingrese su nombre(s): ")
+    Apellido1 = input("Ingrese su primer apellido: ")
+    Apellido2 = input("Ingrese su segundo apellido: ")
     cursor.execute(r"INSERT INTO BDUSERS (Nombre_Usuario, Correo, Contraseña, Saldo_Cuenta, Permisos, Nombres, Apellido1, Apellido2) VALUES (?, ?, ?, ?, ?, ?, ?, ?)", (NombreUsuario, Correo, Contraseña, Saldo_Cuenta, Permisos, Nombres, Apellido1, Apellido2))
     conn.commit()
     print("Usuario agregado exitosamente.")

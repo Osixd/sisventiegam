@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-
+from util import Conectar_bd, Buscar_usuario, Agregar_usuario
 # Clase de utilidades para validación
 class Validador:
     @staticmethod
