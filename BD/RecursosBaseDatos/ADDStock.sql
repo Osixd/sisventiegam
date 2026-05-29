@@ -1,0 +1,2 @@
+ALTER TABLE productos
+ADD COLUMN stock INT NOT NULL DEFAULT 0 CHECK (stock >= 0);
