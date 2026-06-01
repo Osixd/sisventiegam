@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from util import Conectar_bd, Buscar_usuario, Agregar_usuario
+from util import *
 # Clase de utilidades para validación
 class Validador:
     @staticmethod
@@ -12,7 +12,6 @@ class Validador:
 
 class Producto(ABC):
     def __init__(self, titulo, plataforma, precio):
-        
         self.titulo = titulo
         self.plataforma = plataforma
         self._precio = None
@@ -30,7 +29,7 @@ class Producto(ABC):
             print("Error: El precio debe ser mayor que cero.")
         else:
             self._precio = valor 
-               
+            
     @abstractmethod
     def mostrar_info(self):
         pass
