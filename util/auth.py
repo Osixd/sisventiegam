@@ -1,5 +1,4 @@
 import bcrypt
-import psycopg2
 import getpass
 
 def Login(conexion):
