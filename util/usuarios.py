@@ -1,7 +1,7 @@
 import bcrypt
 import psycopg2
 import getpass
-from auth import Verificar_permisos
+from .auth import Verificar_permisos
 
 def Mostrar_usuarios(conexion, usuario):
     try:
@@ -102,7 +102,7 @@ def Eliminar_usuario(conexion):
         contrasena_confirmacion = getpass.getpass("Ingrese su contraseña para confirmar: ")
         
         if not bcrypt.checkpw(contrasena_confirmacion.encode('utf-8'), resultado[0].encode('utf-8')):
-            print("Contraseña incorrecta o no tienes permisos suficientes.")
+            print("Contraseña incorrecta.")
             return
         
         if permisos == 'admin':
