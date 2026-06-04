@@ -53,7 +53,7 @@ def Logout():
     print("Has cerrado sesión exitosamente.")
     return None
 
-def Verificar_permisos(conexion, usuario):
+def Verificar_permisos(conexion, usuario): #Esta funcion se utilizaba antes, despues se volvio inutil.
     
     try:
         

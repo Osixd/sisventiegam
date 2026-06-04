@@ -1,7 +1,6 @@
 import psycopg2
 import bcrypt
 import getpass
-from .auth import Verificar_permisos
 
 
 def Mostrar_productos(conexion):
@@ -15,6 +14,7 @@ def Mostrar_productos(conexion):
             FROM productos p
             JOIN categorias c ON p.id_categoria = c.id_categoria """)
         datos_producto = cursor.fetchall()
+        
         return [{
             'nombre': row[0],
             'categoria': row[1],
@@ -113,25 +113,22 @@ def Agregar_producto(conexion, usuario_activo):
         print(f"Error al agregar el producto: {e}")
         
         
-def Actualizar_producto(conexion,):
+def Actualizar_producto(conexion, usuario_activo):
     
     try:
         
         cursor = conexion.cursor()
         
-        print("Por seguridad, se volveran a pedir las credenciales del usuario.")
-        admin = input("Ingrese su nombre de usuario: ")
-        cursor.execute("SELECT contrasena FROM usuarios WHERE nombre_usuario = %s", (admin,))        
-        resultado = cursor.fetchone()
-        permisos = Verificar_permisos(conexion, admin)        
-        contrasena_confirmacion = getpass.getpass("Ingrese su contraseña: ")   
+        cursor.execute("SELECT contrasena FROM usuarios WHERE nombre_usuario = %s", (usuario_activo["nombre_usuario"],))        
+        resultado = cursor.fetchone()     
+        contrasena_confirmacion = getpass.getpass("Por seguridad, vuelva a ingresar su contraseña: ")   
 
         if not bcrypt.checkpw(contrasena_confirmacion.encode('utf-8'), resultado[0].encode('utf-8')):
             
             print("Contraseña incorrecta.")
             return    
 
-        if permisos == 'admin':
+        if usuario_activo["permisos"]== 'admin':
             
             nombre_producto = input("Ingrese el nombre del producto a actualizar: ")
             cursor.execute("SELECT id_producto FROM productos WHERE nombre_producto = %s", (nombre_producto, ))    
@@ -200,21 +197,18 @@ def Actualizar_producto(conexion,):
         print(f"Error al actualizar el producto: {e}")
         
         
-def Eliminar_producto(conexion):
+def Eliminar_producto(conexion, usuario_activo):
     try:
         cursor = conexion.cursor()
-        print("Por seguridad, se volveran a pedir las credenciales del usuario.")
-        admin = input("Ingrese su nombre de usuario: ")
-        cursor.execute("SELECT contrasena FROM usuarios WHERE nombre_usuario = %s", (admin,))        
+        cursor.execute("SELECT contrasena FROM usuarios WHERE nombre_usuario = %s", (usuario_activo["nombre_usuario"],))        
         resultado = cursor.fetchone()
-        permisos = Verificar_permisos(conexion, admin)        
-        contrasena_confirmacion = getpass.getpass("Ingrese su contraseña: ")   
+        contrasena_confirmacion = getpass.getpass("Por seguridad, vuelve a ingresar su contraseña: ")   
 
         if not bcrypt.checkpw(contrasena_confirmacion.encode('utf-8'), resultado[0].encode('utf-8')):
             print("Contraseña incorrecta.")
             return    
 
-        if permisos == 'admin':
+        if usuario_activo["permisos"] == 'admin':
             nombre_producto = input("Ingrese el nombre del producto a eliminar: ")
             cursor.execute("SELECT id_producto FROM productos WHERE nombre_producto = %s", (nombre_producto, ))    
             resultado = cursor.fetchone()

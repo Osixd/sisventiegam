@@ -40,22 +40,22 @@ def main():#Función principal con menú para la tienda de videojuegos
                 productos = Buscar_producto(conexion, nombre_producto)
                 if productos:
                     for p in productos:
-                        print(f"{p['nombre']} \n {p['categoria']} \n {p['precio']:.2f} \n {p['stock']}")
+                        print(f" Produto: {p['nombre']}\n Categoria: {p['categoria']}\n Precio(mxn): ${p['precio']:.2f}\n Descripcion: {p['descripcion']}\n Stock:{p['stock']}")
                 else:
                     print("No se encontraron productos con ese nombre.")
             elif opcion == '3':
                 Agregar_producto(conexion, usuario_activo)
             elif opcion == '4':
-                Actualizar_producto(conexion)
+                Actualizar_producto(conexion, usuario_activo)
             elif opcion == '5':
-                Eliminar_producto(conexion)
+                Eliminar_producto(conexion, usuario_activo)
             elif opcion == '6':
                 Mostrar_usuarios(conexion, usuario_activo)
             elif opcion == '7':
                 nombre_usuario = input("Ingrese el nombre de usuario a buscar: ")
                 Buscar_usuario(conexion, nombre_usuario)
             elif opcion == '8':
-                Agregar_usuario(conexion)
+                Agregar_usuario(conexion, usuario_activo)
             elif opcion == '9':
                 Eliminar_usuario(conexion, usuario_activo)
             elif opcion == '10':

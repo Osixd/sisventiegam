@@ -3,11 +3,14 @@ import psycopg2
 import getpass
 from .auth import Verificar_permisos
 
-def Mostrar_usuarios(conexion, usuario):
+def Mostrar_usuarios(conexion, usuario_activo):
+    
     try:
+        
         cursor = conexion.cursor()
-        permisos = Verificar_permisos(conexion, usuario)
-        if permisos == 'admin':
+        
+        if usuario_activo['permisos'] == 'admin':
+            
             cursor.execute("SELECT * FROM usuarios")
             rows = cursor.fetchall()
             for row in rows:
