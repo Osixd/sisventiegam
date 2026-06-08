@@ -1,6 +1,6 @@
-import bcrypt
 import psycopg2
-from productos import Mostrar_productos, Buscar_producto
+from .productos import Mostrar_productos, Buscar_producto
+
 
 
 def Verificar_carrito(conexion, id_usuario):
@@ -9,10 +9,12 @@ def Verificar_carrito(conexion, id_usuario):
         
         cursor = conexion.cursor()
         
-        cursor.execute("""
-            SELECT id_carrito FROM carrito 
-            WHERE id_usuario = %s 
-            AND estado = 'activo'""", (id_usuario,))
+        cursor.execute(""" 
+                       SELECT id_carrito
+                       FROM carrito 
+                       WHERE id_usuario = %s 
+                       AND estado = 'activo'""", 
+                       (id_usuario,))
         carrito = cursor.fetchone()
         
         if carrito is not None:
@@ -22,8 +24,9 @@ def Verificar_carrito(conexion, id_usuario):
         else:
             
             cursor.execute("""
-                INSERT INTO carrito (id_usuario, estado) 
-                VALUES (%s, 'activo') RETURNING id_carrito""", (id_usuario,))
+                           INSERT INTO carrito (id_usuario, estado) 
+                           VALUES (%s, 'activo') RETURNING id_carrito""",
+                           (id_usuario,))
             conexion.commit()
             nuevo_carrito = cursor.fetchone()
             return nuevo_carrito[0]
@@ -32,6 +35,7 @@ def Verificar_carrito(conexion, id_usuario):
         
         print(f"Error al verificar el carrito: {e}")
         return None
+
 
 
 def Agregar_al_carrito(conexion, id_carrito, id_usuario):
@@ -75,9 +79,28 @@ def Agregar_al_carrito(conexion, id_carrito, id_usuario):
             
             print("No hay suficiente stock")
             return
+
+        cursor.execute("""
+                       SELECT cantidad
+                       FROM detalle_carrito
+                       WHERE id_carrito = %s
+                       AND id_producto = %s""",
+                       (id_carrito, producto["id"]))
+        resultado = cursor.fetchone()
+        cantidad_actual = 0
+        
+        if resultado is not None:
+            
+            cantidad_actual = resultado[0]
+
+        if cantidad_actual + cantidad > producto["stock"]:
+            
+            print("No hay suficiente stock para agregar esa cantidad al carrito")
+            return
         
         else:
-            cursor.execute("""INSERT INTO detalle_carrito (id_carrito, id_producto, cantidad) 
+            cursor.execute("""
+                           INSERT INTO detalle_carrito (id_carrito, id_producto, cantidad) 
                            VALUES (%s, %s, %s)
                            ON CONFLICT (id_carrito, id_producto)
                            DO UPDATE SET cantidad = detalle_carrito.cantidad + EXCLUDED.cantidad""",
@@ -95,29 +118,25 @@ def Agregar_al_carrito(conexion, id_carrito, id_usuario):
 def Ver_carrito(conexion, id_usuario):
     
     try:
-        cursor = conexion.cursor()
-
+        
         id_carrito = Verificar_carrito(conexion, id_usuario)
-        cursor.execute("""SELECT p.nombre_producto, dc.cantidad, p.precio,
-                       dc.cantidad * precio AS subtotal
-                       FROM detalle_carrito dc
-                       JOIN productos p ON dc.id_producto = p.id_producto
-                       WHERE dc.id_carrito = %s """, (id_carrito, ))
-        productos = cursor.fetchall()
+        productos = Obtener_productos_carrito(conexion, id_carrito)
         
         if not productos:
+            
             print("Tu carrito esta vacio")
             return
 
         total = 0
+        
         print("----------Tu carrito----------")
-        for producto in productos:
-            nombre = producto[0]
-            cantidad = producto[1]
-            precio = producto[2]
-            subtotal = producto[3]
+        for i, producto in enumerate(productos, 1):
+            nombre = producto["nombre"]
+            cantidad = producto["cantidad"]
+            precio = producto["precio"]
+            subtotal = producto["subtotal"]
             total += subtotal
-            print(f"""
+            print(f"""{i}. Producto/servicio
                 Producto:  {nombre}
                 Cantidad:  {cantidad}
                 Precio:   ${precio:.2f}   (mxn)
@@ -130,3 +149,117 @@ def Ver_carrito(conexion, id_usuario):
     except psycopg2.Error as e:
         
         print(f"Error al ver el carrito: {e}")
+
+
+
+def Obtener_productos_carrito(conexion, id_carrito):
+    try:
+        cursor = conexion.cursor()
+        cursor.execute("""
+                       SELECT p.id_producto, p.nombre_producto, dc.cantidad, p.precio, 
+                       dc.cantidad * p.precio AS subtotal
+                       FROM detalle_carrito dc
+                       JOIN productos p ON dc.id_producto = p.id_producto
+                       WHERE dc.id_carrito = %s""",
+                       (id_carrito,))
+
+        return [{
+            "id": row[0],
+            "nombre": row[1],
+            "cantidad": row[2],
+            "precio": row[3],
+            "subtotal": row[4]
+        } for row in cursor.fetchall()]
+
+    except psycopg2.Error as e:
+        
+        print(f"Error al obtener productos del carrito: {e}")
+        return None
+
+
+
+def Eliminar_del_carrito(conexion, usuario_activo, id_carrito):
+
+    try:
+        
+        cursor = conexion.cursor()
+
+        if id_carrito is None:
+
+            id_carrito = Verificar_carrito(conexion, usuario_activo["id_usuario"])
+
+        productos = Obtener_productos_carrito(conexion, id_carrito)
+
+        if not productos:
+            
+            print("Tu carrito esta vacio")
+            return
+
+        print("----------Tu carrito----------")
+        for i, producto in enumerate(productos, 1):
+            print(f"""{i}. Producto/servicio
+                Producto:  {producto['nombre']}
+                Cantidad:  {producto['cantidad']}
+                Precio:   ${producto['precio']:.2f}   (mxn)
+                """)
+
+        try:
+            
+            seleccion = int(input("¿Qué producto deseas quitar? "))
+            
+        except ValueError:
+            
+            print("Por favor solo ingresa numeros enteros")
+            return
+
+        if seleccion < 1 or seleccion > len(productos):
+            print("Selección inválida")
+            return
+
+        producto = productos[seleccion - 1]
+
+        try:
+            
+            cantidad = int(input("¿Cuántos deseas quitar del carrito? "))
+            
+        except ValueError:
+            
+            print("Por favor solo ingresa numeros enteros")
+            return
+
+        if cantidad <= 0:
+            
+            print("La cantidad debe ser mayor a 0")
+            return
+
+        if cantidad > producto["cantidad"]:
+            
+            print("No puedes quitar mas cosas de las que tienes en el carrito")
+            return
+
+        nueva_cantidad = producto["cantidad"] - cantidad
+
+        if nueva_cantidad == 0:
+            
+            cursor.execute("""
+                           DELETE FROM detalle_carrito
+                           WHERE id_carrito = %s
+                           AND id_producto = %s""",
+                           (id_carrito, producto["id"]))
+            
+        else:
+            
+            cursor.execute("""
+                           UPDATE detalle_carrito
+                           SET cantidad = %s
+                           WHERE id_carrito = %s
+                           AND id_producto = %s""",
+                           (nueva_cantidad, id_carrito, producto["id"]))
+
+        conexion.commit()
+        print("Carrito actualizado")
+
+    except psycopg2.Error as e:
+        
+        print(f"Error al eliminar del carrito: {e}")
+        conexion.rollback()

@@ -1,6 +1,8 @@
 import bcrypt
 import getpass
 
+
+
 def Login(conexion):
     
     intentos = 3
@@ -13,10 +15,10 @@ def Login(conexion):
             nombre_usuario = input("Ingrese su nombre de usuario: ")
             contrasena = getpass.getpass("Ingrese su contraseña: ")
             cursor.execute("""
-                            SELECT contrasena, id_usuario, permisos 
-                            FROM usuarios 
-                            WHERE nombre_usuario = %s
-                            """, (nombre_usuario,))
+                           SELECT contrasena, id_usuario, permisos 
+                           FROM usuarios 
+                           WHERE nombre_usuario = %s""", 
+                           (nombre_usuario,))
             resultado = cursor.fetchone()
             
             if resultado is not None and bcrypt.checkpw(contrasena.encode('utf-8'), resultado[0].encode('utf-8')):
@@ -46,7 +48,8 @@ def Login(conexion):
             
             print(f"Error al iniciar sesión: {e}")
             return None
-        
+
+
 
 def Logout():
     
@@ -58,7 +61,11 @@ def Verificar_permisos(conexion, usuario): #Esta funcion se utilizaba antes, des
     try:
         
         cursor = conexion.cursor()
-        cursor.execute("SELECT permisos FROM usuarios WHERE nombre_usuario = %s", (usuario,))
+        cursor.execute("""
+                       SELECT permisos 
+                       FROM usuarios 
+                       WHERE nombre_usuario = %s""",
+                       (usuario,))
         resultado = cursor.fetchone()
         
         if resultado:

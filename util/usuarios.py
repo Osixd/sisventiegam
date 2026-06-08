@@ -3,6 +3,7 @@ import psycopg2
 import getpass
 
 
+
 def Mostrar_usuarios(conexion, usuario_activo):
     
     try:
@@ -11,7 +12,9 @@ def Mostrar_usuarios(conexion, usuario_activo):
         
         if usuario_activo['permisos'] == 'admin':
             
-            cursor.execute("""SELECT * FROM usuarios""")
+            cursor.execute("""
+                           SELECT * 
+                           FROM usuarios""")
             rows = cursor.fetchall()
             
             for row in rows:
@@ -27,6 +30,7 @@ def Mostrar_usuarios(conexion, usuario_activo):
         print(f"Error al mostrar los usuarios: {e}")
 
 
+
 def Buscar_usuario(conexion, usuario):
     
     if not usuario:
@@ -37,7 +41,9 @@ def Buscar_usuario(conexion, usuario):
     try:
         
         cursor = conexion.cursor()
-        cursor.execute("""SELECT * FROM usuarios 
+        cursor.execute("""
+                       SELECT * 
+                       FROM usuarios 
                        WHERE nombre_usuario = %s""", (usuario,))
         resultado = cursor.fetchone()
         
@@ -59,6 +65,7 @@ def Buscar_usuario(conexion, usuario):
         return
 
 
+
 def Agregar_usuario(conexion):
     try:
         cursor = conexion.cursor()
@@ -66,8 +73,11 @@ def Agregar_usuario(conexion):
         while True:
             
             NombreUsuario = input("Ingrese el nombre de usuario: ")
-            cursor.execute("""SELECT * FROM usuarios 
-                           WHERE nombre_usuario = %s""", (NombreUsuario,))
+            cursor.execute("""
+                           SELECT * 
+                           FROM usuarios 
+                           WHERE nombre_usuario = %s""", 
+                           (NombreUsuario,))
             
             if cursor.fetchone():
                 
@@ -80,8 +90,11 @@ def Agregar_usuario(conexion):
         while True:
             
             Correo = input("Ingrese el correo electrónico: ")
-            cursor.execute("""SELECT * FROM usuarios 
-                           WHERE correo = %s""", (Correo,))
+            cursor.execute("""
+                           SELECT * 
+                           FROM usuarios 
+                           WHERE correo = %s""", 
+                           (Correo,))
             
             if cursor.fetchone():
                 
@@ -110,7 +123,8 @@ def Agregar_usuario(conexion):
         Nombres = input("Ingrese su nombre(s): ")
         Apellido_paterno = input("Ingrese su apellido paterno: ")
         Apellido_materno = input("Ingrese su apellido materno: ")
-        cursor.execute("""INSERT INTO usuarios (nombre_usuario, nombres, apellido_paterno, apellido_materno, correo, contrasena) 
+        cursor.execute("""
+                       INSERT INTO usuarios (nombre_usuario, nombres, apellido_paterno, apellido_materno, correo, contrasena) 
                        VALUES (%s, %s, %s, %s, %s, %s)""",
                        (NombreUsuario, Nombres, Apellido_paterno, Apellido_materno, Correo, contrasena_encriptada))
         conexion.commit()
@@ -142,9 +156,11 @@ def Eliminar_usuario(conexion, usuario_activo):
         
         cursor = conexion.cursor()
         admin = input("Ingrese su nombre de usuario para verificar permisos: ")
-        cursor.execute("""SELECT contrasena
-                        FROM usuarios 
-                        WHERE nombre_usuario = %s""", (admin,))
+        cursor.execute("""
+                       SELECT contrasena
+                       FROM usuarios 
+                       WHERE nombre_usuario = %s""",
+                       (admin,))
         resultado = cursor.fetchone()
         contrasena_confirmacion = getpass.getpass("Ingrese su contraseña para confirmar: ")
         
@@ -156,9 +172,11 @@ def Eliminar_usuario(conexion, usuario_activo):
         if usuario_activo['permisos'] == 'admin':
             
             usuario = input("Ingrese el nombre de usuario a eliminar: ")
-            cursor.execute("""SELECT contrasena 
+            cursor.execute("""
+                           SELECT contrasena 
                            FROM usuarios
-                           WHERE nombre_usuario = %s""", (usuario,))
+                           WHERE nombre_usuario = %s""", 
+                           (usuario,))
             resultado = cursor.fetchone()
             
             if resultado is None:
@@ -172,8 +190,10 @@ def Eliminar_usuario(conexion, usuario_activo):
                 
                 if confirmacion.lower() in ['si', 'sí', 's']:
                     
-                    cursor.execute("""DELETE FROM usuarios
-                                   WHERE nombre_usuario = %s""", (usuario,))
+                    cursor.execute("""
+                                   DELETE FROM usuarios
+                                   WHERE nombre_usuario = %s""",
+                                   (usuario,))
                     conexion.commit()
                     print("Usuario eliminado exitosamente.")
                     
