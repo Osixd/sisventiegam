@@ -1,4 +1,5 @@
 import psycopg2
+from decimal import Decimal
 from .productos import Mostrar_productos, Buscar_producto
 
 
@@ -60,7 +61,7 @@ def Agregar_al_carrito(conexion, id_carrito, id_usuario):
                 Precio(mxn):  ${p['precio']:.2f}
                 Stock:         {p['stock']}""")
         
-        nombre_producto = input("¿Qué producto desea agregar al carrito?(solo selecciona uno)")
+        nombre_producto = input("¿Qué producto desea agregar al carrito?(solo selecciona uno por su nombre)")
         productos_encontrados = Buscar_producto(conexion, nombre_producto)
         
         if not productos_encontrados:
@@ -137,14 +138,14 @@ def Ver_carrito(conexion, id_usuario):
             subtotal = producto["subtotal"]
             total += subtotal
             print(f"""{i}. Producto/servicio
-                Producto:  {nombre}
-                Cantidad:  {cantidad}
-                Precio:   ${precio:.2f}   (mxn)
-                Subtotal: ${subtotal:.2f} (mxn)
+Producto:  {nombre}
+Cantidad:  {cantidad}
+Precio:   ${precio:.2f}   (mxn)
+Subtotal: ${subtotal:.2f} (mxn)
                 """)
         
         print(f"El total es: ${total:.2f} (mxn)")
-        print(f"El IVA es: {total * .16}")
+        print(f"El IVA es: {total * Decimal(.16):.2f}")
         
     except psycopg2.Error as e:
         
