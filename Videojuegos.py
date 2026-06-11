@@ -67,6 +67,40 @@ class Producto(ABC):
         pass
 
 
+class Carrito:
+    def __init__(self):
+        self.productos = []
+
+    def agregar_producto(self, producto):
+        self.productos.append(producto)
+        print(f"'{producto.titulo}' se ha agregado al carrito.")
+
+    def quitar_producto(self, indice):
+        if 0 <= indice < len(self.productos):
+            producto = self.productos.pop(indice)
+            print(f"'{producto.titulo}' se ha quitado del carrito.")
+            return producto
+        print("Índice de producto inválido.")
+        return None
+
+    def total(self):
+        return sum(producto.precio for producto in self.productos)
+
+    def esta_vacio(self):
+        return len(self.productos) == 0
+
+    def mostrar_info(self):
+        if self.esta_vacio():
+            return "El carrito está vacío."
+        lineas = ["Carrito:"]
+        for i, producto in enumerate(self.productos, 1):
+            lineas.append(f"{i}. {producto.titulo} - ${producto.precio:.2f}")
+        lineas.append(f"Total: ${self.total():.2f}")
+        return "\n".join(lineas)
+
+    def vaciar(self):
+        self.productos.clear()
+
 
 #Clase videojuego
 class Videojuego(Producto):
@@ -85,7 +119,7 @@ class Videojuego(Producto):
         self._precio -= descuento
         
     def calcular_precio_final(self):
-        pass
+        return self._precio
     
     def get_precio(self):
         return self._precio
@@ -97,6 +131,7 @@ class Usuario():
         self.nombre = nombre
         self.email = email
         self._saldo = saldo
+        self.carrito = Carrito()
         
     def saludar(self): #Metodo para saludar al usuario
         return f"Hola, bienvenido {self.nombre}.\nTu correo electronico registrado es: {self.email}.\nTienes un saldo de ${self._saldo:.2f}"
@@ -120,6 +155,24 @@ class Usuario():
         self._saldo += monto
         print(f"Depósito exitoso. Nuevo saldo de {self.nombre}: ${self._saldo:.2f}")
     
+    def agregar_al_carrito(self, producto):
+        self.carrito.agregar_producto(producto)
+
+    def quitar_del_carrito(self, indice):
+        self.carrito.quitar_producto(indice)
+
+    def pagar_carrito(self):
+        total = self.carrito.total()
+        if self.carrito.esta_vacio():
+            print("El carrito está vacío.")
+            return
+        if self._saldo >= total:
+            self._saldo -= total
+            self.carrito.vaciar()
+            print(f"{self.nombre} ha pagado el carrito. Total: ${total:.2f}. Saldo restante: ${self._saldo:.2f}")
+        else:
+            print(f"{self.nombre} no tiene suficiente saldo para pagar el carrito. Total: ${total:.2f}")
+    
     #Metodo para comprar un juego
     def comprar_juego(self, videojuego): 
         if self._saldo >= videojuego.precio:
@@ -137,7 +190,7 @@ class VideojuegoDigital(Videojuego):
         self.requiere_internet = requiere_internet
         
     def mostrar_info(self):
-        return f"Titulo: {self.titulo}\nGenero: {self.genero}\nPlataforma: {self.plataforma}\nPrecio: ${self.precio:.2f}\nEste  juego tiene un descuento del 10%\nPrecio final: ${self.calcular_precio_final():.2f}\nTamaño en GB: {self.tamaño_archivo}\nRequiere internet: {self.requiere_internet}"
+        return f"Titulo: {self.titulo}\nGenero: {self.genero}\nPlataforma: {self.plataforma}\nPrecio: ${self.precio:.2f}\nEste  juego tiene un descuento del 10%\nPrecio final: ${self.calcular_precio_final():.2f}\nTamaño en GB: {self.tamano_archivo}\nRequiere internet: {self.requiere_internet}"
 
     def calcular_precio_final(self):    
         return self.precio * 0.9 
@@ -174,7 +227,7 @@ class Accesorio(Producto):
             return self._precio
 
     def get_precio(self):
-        super().get_precio()
+        return super().get_precio()
     
     def set_precio(self, nuevo_precio):
         super().precio = nuevo_precio
@@ -221,9 +274,11 @@ def main():#Función principal con menú para la tienda de videojuegos
         print("="*50)
         print("1. Ver catálogo completo")
         print("2. Aplicar promoción a un videojuego")
-        print("3. Verificar si un cliente puede comprar")
-        print("4. Agregar saldo a un cliente")
-        print("5. Salir")
+        print("3. Agregar producto al carrito")
+        print("4. Ver carrito de un cliente")
+        print("5. Pagar carrito")
+        print("6. Agregar saldo a un cliente")
+        print("7. Salir")
         print("="*50)
         
         #Solicitar al usuario que elija una opción          
@@ -251,30 +306,57 @@ def main():#Función principal con menú para la tienda de videojuegos
                     print("Opción inválida")#Opcion invalida
         
         elif opcion == "3":
-            print("\n--- VERIFICAR COMPRA ---") 
+            print("\n--- AGREGAR PRODUCTO AL CARRITO ---")
             for i, usuario in enumerate(usuarios, 1): 
-                print(f"{i}. {usuario.nombre} (Saldo: ${usuario.get_saldo():.2f})") #Enumerate para mostrar el numero del usuario junto con su nombre y saldo
+                print(f"{i}. {usuario.nombre} (Saldo: ${usuario.get_saldo():.2f})")
             
             num_usuario = Validador.obtener_numero("Selecciona el número del usuario: ", int)
             if num_usuario is not None:
                 num_usuario -= 1
-                for i, juego in enumerate(juegos, 1):
-                    print(f"{i}. {juego.titulo} - ${juego.precio:.2f}") #Enumerate para mostrar el numero del juego junto con su título y precio
-                
-                num_juego = Validador.obtener_numero("Selecciona el número del juego: ", int)
-                if num_juego is not None:
-                    num_juego -= 1
-                    if 0 <= num_usuario < len(usuarios) and 0 <= num_juego < len(juegos):
-                        usuario = usuarios[num_usuario] #Obtenemos el usuario seleccionado
-                        juego = juegos[num_juego] #Obtenemos el juego seleccionado
-                        if usuario.tiene_saldo_suficiente(juego.precio):
-                            usuario.comprar_juego(juego) #Si el usuario tiene saldo suficiente, se realiza la compra
+                if 0 <= num_usuario < len(usuarios):
+                    comprables = [p for p in catalogo if isinstance(p, Producto)]
+                    for i, producto in enumerate(comprables, 1):
+                        print(f"{i}. {producto.titulo} - ${producto.precio:.2f}")
+                    num_producto = Validador.obtener_numero("Selecciona el número del producto: ", int)
+                    if num_producto is not None:
+                        num_producto -= 1
+                        if 0 <= num_producto < len(comprables):
+                            usuarios[num_usuario].agregar_al_carrito(comprables[num_producto])
                         else:
-                            print(f"{usuario.nombre} no tiene saldo suficiente")#Si el usuario no tiene saldo suficiente, se muestra un mensaje indicando que no puede realizar la compra
+                            print("Opción inválida")
                     else:
-                        print("Opción inválida") #Opcion invalida
+                        print("Opción inválida")
+                else:
+                    print("Opción inválida")
         
         elif opcion == "4":
+            print("\n--- VER CARRITO ---")
+            for i, usuario in enumerate(usuarios, 1): 
+                print(f"{i}. {usuario.nombre} (Saldo: ${usuario.get_saldo():.2f})")
+            
+            num_usuario = Validador.obtener_numero("Selecciona el número del usuario: ", int)
+            if num_usuario is not None:
+                num_usuario -= 1
+                if 0 <= num_usuario < len(usuarios):
+                    usuario = usuarios[num_usuario]
+                    print(usuario.carrito.mostrar_info())
+                else:
+                    print("Opción inválida")
+        
+        elif opcion == "5":
+            print("\n--- PAGAR CARRITO ---")
+            for i, usuario in enumerate(usuarios, 1): 
+                print(f"{i}. {usuario.nombre} (Saldo: ${usuario.get_saldo():.2f})")
+            
+            num_usuario = Validador.obtener_numero("Selecciona el número del usuario: ", int)
+            if num_usuario is not None:
+                num_usuario -= 1
+                if 0 <= num_usuario < len(usuarios):
+                    usuarios[num_usuario].pagar_carrito()
+                else:
+                    print("Opción inválida")
+        
+        elif opcion == "6":
             print("\n--- AGREGAR SALDO ---")
             for i, usuario in enumerate(usuarios, 1):
                 print(f"{i}. {usuario.nombre} (Saldo: ${usuario.get_saldo():.2f})") #Enumerate para mostrar el numero del usuario junto con su nombre y saldo
@@ -287,10 +369,8 @@ def main():#Función principal con menú para la tienda de videojuegos
                     usuarios[num_usuario].depositar(monto) #Agregamos el saldo al usuario seleccionado
                 else:
                     print("Opción inválida") #Opcion invalida
-            
-            
-            
-        elif opcion == "5":        
+        
+        elif opcion == "7":        
             print("\n¡Hasta luego! Gracias por visitarnos.") #Mensaje de despedida al salir del programa
             break
         
