@@ -1,42 +1,17 @@
 from abc import ABC, abstractmethod
 
-#Clase servicio. garantia, precio base, tipo de servicio, valor de reparacion, tiempo de entrega, 
-# Metodo mostrar info, calcular precio final.
-class Servicio():
-    def __init__(self, NombreServicio, TipoServicio, PrecioBase, ValorReparacion, TiempoEntrega, Garantia):
-        self.NombreServicio = NombreServicio
-        self.TipoServicio = TipoServicio
-        self.PrecioBase = PrecioBase
-        self.ValorReparacion = ValorReparacion
-        self.TiempoEntrega = TiempoEntrega
-        self.Garantia = bool(Garantia)
-                
-    def calcular_precio_final(self):
-        if self.TipoServicio == "Reparación" or self.TipoServicio == "Mantenimiento":
-            return (self.PrecioBase + self.ValorReparacion) * (self.TiempoEntrega * 0.5)
-        else:
-            return self.PrecioBase      
-        
-    def mostrar_info(self):
-        if self.Garantia == True:
-            return f"Garantia de 1 año para Consolas o Pc's\n Precio: ${self.calcular_precio_final():.2f}"
-        else:            
-            return f"Nombre del servicio: {self.NombreServicio}\nTipo de servicio: {self.TipoServicio}\nPrecio base: ${self.PrecioBase:.2f}\nValor de reparación: ${self.calcular_precio_final():.2f}\nTiempo de entrega: {self.TiempoEntrega} días."
-          
-
-
-        
-    
-#Clase validador para validar entradas del usuario
+# Clase de utilidades para validación
 class Validador:
     @staticmethod
-    def obtener_numero(mensaje, tipo=int):
+    def obtener_numero(mensaje, tipo=int): #Metodo para validar entrada de números
         try:
             return tipo(input(mensaje))
         except ValueError:
             print("Entrada inválida")
             return None
 
+# ── Clase Producto (Abstracta) ───────────────────────────────────────────────
+# Clase base para todos los productos (atributos: título, plataforma, precio)
 class Producto(ABC):
     def __init__(self, titulo, plataforma, precio):
         
@@ -46,11 +21,11 @@ class Producto(ABC):
         self.precio = precio
     
     @property   
-    def precio(self): #Metodo para obtener el precio del juego
+    def precio(self): #Metodo para obtener el precio del producto
         return self._precio
     
     @precio.setter
-    def precio(self, valor): #Metodo para establecer un nuevo precio al juego
+    def precio(self, valor): #Metodo para establecer un nuevo precio al producto
         if not isinstance(valor, (int, float)): #Validación para asegurarse de que el nuevo precio sea un número positivo
             print("Error, el valor ingresado no es un número.") 
         elif valor <= 0:
@@ -67,76 +42,41 @@ class Producto(ABC):
         pass
 
 
-class Carrito:
-    def __init__(self):
-        self.productos = []
-
-    def agregar_producto(self, producto):
-        self.productos.append(producto)
-        print(f"'{producto.titulo}' se ha agregado al carrito.")
-
-    def quitar_producto(self, indice):
-        if 0 <= indice < len(self.productos):
-            producto = self.productos.pop(indice)
-            print(f"'{producto.titulo}' se ha quitado del carrito.")
-            return producto
-        print("Índice de producto inválido.")
-        return None
-
-    def total(self):
-        return sum(producto.precio for producto in self.productos)
-
-    def esta_vacio(self):
-        return len(self.productos) == 0
-
-    def mostrar_info(self):
-        if self.esta_vacio():
-            return "El carrito está vacío."
-        lineas = ["Carrito:"]
-        for i, producto in enumerate(self.productos, 1):
-            lineas.append(f"{i}. {producto.titulo} - ${producto.precio:.2f}")
-        lineas.append(f"Total: ${self.total():.2f}")
-        return "\n".join(lineas)
-
-    def vaciar(self):
-        self.productos.clear()
-
 
 #Clase videojuego
 class Videojuego(Producto):
-    def __init__(self, titulo, genero, precio, plataforma): #constructor
+    def __init__(self, titulo, genero, precio, plataforma): #Constructor: titulo, género, precio, plataforma
         super().__init__(titulo, plataforma, precio)
         self.genero = genero
         
 
-    #Metodo para imprimir la información"
-    def mostrar_info(self, ):
+    def mostrar_info(self): #Metodo para imprimir la información del videojuego
         return f"Titulo: {self.titulo}\nGenero: {self.genero}\nPrecio: ${self.precio:.2f}\nPlataforma: {self.plataforma}"
 
-    #Metodo para aplicar descuento
-    def aplicar_descuento(self, porcentaje):
+    def aplicar_descuento(self, porcentaje): #Metodo para aplicar descuento al videojuego
         descuento = self._precio * (porcentaje) / 100
         self._precio -= descuento
         
     def calcular_precio_final(self):
-        return self._precio
+        pass
     
-    def get_precio(self):
+    def get_precio(self): #Metodo para obtener el precio del videojuego
         return self._precio
 
 
-#Clase de los Usuarios
+# ── Clase Usuario ────────────────────────────────────────────────────────────
+# Usuario con saldo, carrito, y métodos de compra
 class Usuario():
-    def __init__(self, nombre, email, saldo): #constructor
+    def __init__(self, nombre, email, saldo): #Constructor: nombre, email, saldo inicial
         self.nombre = nombre
         self.email = email
         self._saldo = saldo
         self.carrito = Carrito()
         
-    def saludar(self): #Metodo para saludar al usuario
+    def saludar(self): #Metodo para saludar al usuario y mostrar su información
         return f"Hola, bienvenido {self.nombre}.\nTu correo electronico registrado es: {self.email}.\nTienes un saldo de ${self._saldo:.2f}"
     
-    def tiene_saldo_suficiente(self, monto):#Metodo para verificar si el usuario tiene saldo suficiente para comprar un juego
+    def tiene_saldo_suficiente(self, monto): #Metodo para verificar si el usuario tiene saldo suficiente
         if self._saldo >= monto:
             return True
         else:
@@ -145,7 +85,7 @@ class Usuario():
     def get_saldo(self): #Metodo para obtener el saldo del usuario
         return self._saldo
 
-    def depositar(self, monto):
+    def depositar(self, monto): #Metodo para depositar saldo a la cuenta del usuario
         if not isinstance(monto, (int, float)):
             print("Error: el monto a depositar debe ser un número.")
             return
@@ -155,89 +95,76 @@ class Usuario():
         self._saldo += monto
         print(f"Depósito exitoso. Nuevo saldo de {self.nombre}: ${self._saldo:.2f}")
     
-    def agregar_al_carrito(self, producto):
-        self.carrito.agregar_producto(producto)
-
-    def quitar_del_carrito(self, indice):
-        self.carrito.quitar_producto(indice)
-
-    def pagar_carrito(self):
-        total = self.carrito.total()
-        if self.carrito.esta_vacio():
-            print("El carrito está vacío.")
-            return
-        if self._saldo >= total:
-            self._saldo -= total
-            self.carrito.vaciar()
-            print(f"{self.nombre} ha pagado el carrito. Total: ${total:.2f}. Saldo restante: ${self._saldo:.2f}")
-        else:
-            print(f"{self.nombre} no tiene suficiente saldo para pagar el carrito. Total: ${total:.2f}")
-    
     #Metodo para comprar un juego
     def comprar_juego(self, videojuego): 
         if self._saldo >= videojuego.precio:
-            self._saldo -= videojuego.precio #Caso positivo
+            self._saldo -= videojuego.precio
             print(f"{self.nombre} ha comprado {videojuego.titulo} por ${videojuego.precio:.2f}")
         else:
-            print(f"{self.nombre} no tiene suficiente saldo para comprar {videojuego.titulo}")#Caso negativo
+            print(f"{self.nombre} no tiene suficiente saldo para comprar {videojuego.titulo}")
 
 
-#Clase videojuego_digital
+# ── Clase VideojuegoDigital ──────────────────────────────────────────────────
+# Extiende de Videojuego: agrega tamaño en GB y requisito de internet
 class VideojuegoDigital(Videojuego):
-    def __init__(self, titulo, genero, precio, plataforma, tamano_gb, requiere_internet):
+    def __init__(self, titulo, genero, precio, plataforma, tamano_gb, requiere_internet): #Constructor con atributos adicionales
         super().__init__(titulo, genero, precio, plataforma)
         self.tamano_archivo = tamano_gb
         self.requiere_internet = requiere_internet
         
     def mostrar_info(self):
-        return f"Titulo: {self.titulo}\nGenero: {self.genero}\nPlataforma: {self.plataforma}\nPrecio: ${self.precio:.2f}\nEste  juego tiene un descuento del 10%\nPrecio final: ${self.calcular_precio_final():.2f}\nTamaño en GB: {self.tamano_archivo}\nRequiere internet: {self.requiere_internet}"
+        return f"Titulo: {self.titulo}\nGenero: {self.genero}\nPlataforma: {self.plataforma}\nPrecio: ${self.precio:.2f}\nEste  juego tiene un descuento del 10%\nPrecio final: ${self.calcular_precio_final():.2f}\nTamaño en GB: {self.tamaño_archivo}\nRequiere internet: {self.requiere_internet}"
 
-    def calcular_precio_final(self):    
+    def calcular_precio_final(self): #Metodo para calcular precio final con descuento del 10%
         return self.precio * 0.9 
 
-#Clase Consola 
+# ── Clase Consola ────────────────────────────────────────────────────────────
+# Extiende de Producto: consolas de videojuegos con almacenamiento
 class Consola(Producto):
-    def __init__(self, titulo, precio, plataforma, almacenamiento_gb):
+    def __init__(self, titulo, precio, plataforma, almacenamiento_gb): #Constructor: titulo, precio, plataforma, almacenamiento
         super().__init__(titulo, plataforma, precio)
         self.almacenamiento = almacenamiento_gb
 
-    def mostrar_info(self):
+    def mostrar_info(self): #Metodo para mostrar información de la consola
         return f"Titulo: {self.titulo}\nPlataforma: {self.plataforma}\nPrecio: ${self.precio:.2f}\nAlmacenamiento: {self.almacenamiento} GB"        
     
-    def calcular_precio_final(self):
+    def calcular_precio_final(self): #Metodo para calcular precio final con descuento si es mayor a $10,000
         if self._precio >= 10000:
             return self._precio * 0.90
         else:
             return self._precio
 
 
-#Clase accesorio    
+# ── Clase Accesorio ──────────────────────────────────────────────────────────
+# Extiende de Producto: accesorios para consolas (controles, audífonos, etc.)
 class Accesorio(Producto):
-    def __init__(self, titulo, precio, plataforma, tipo):
+    def __init__(self, titulo, precio, plataforma, tipo): #Constructor: titulo, precio, plataforma, tipo de accesorio
         super().__init__(titulo, plataforma, precio)
         self.tipo_accesorio = tipo
 
-    def mostrar_info(self):
+    def mostrar_info(self): #Metodo para mostrar información del accesorio
         return f"Titulo: {self.titulo}\nPlataforma: {self.plataforma}\nPrecio: ${self.precio:.2f}\nTipo de accesorio: {self.tipo_accesorio}"
     
-    def calcular_precio_final(self):
+    def calcular_precio_final(self): #Metodo para calcular precio final con descuento del 5% si es mayor a $500
         if self._precio >= 500:
             return self._precio * 0.95
         else:
             return self._precio
 
     def get_precio(self):
-        return super().get_precio()
+        super().get_precio()
     
-    def set_precio(self, nuevo_precio):
+    def set_precio(self, nuevo_precio): #Metodo para establecer nuevo precio del accesorio
         super().precio = nuevo_precio
 
+# ── Instanciación de Productos ───────────────────────────────────────────────
+# Creación de instancias de videojuegos, consolas y accesorios
 #Instanciamos juegos
 videojuego1 = Videojuego("The Last of Us", "Accion", 59.99, "PlayStation")
 videojuego2 = Videojuego("Cyberpunk 2077", "RPG", 49.99, "PC")
 videojuego3 = Videojuego("Animal Crossing: New Horizons", "Simulacion", 59.99, "Nintendo Switch")
 
-#Intancia consolas
+#Instancia consolas
 consola1 = Consola("PlayStation 5", 499.99, "PlayStation", 825)
 consola2 = Consola("Xbox Series X", 499.99, "Xbox", 1000)
 
@@ -245,7 +172,8 @@ consola2 = Consola("Xbox Series X", 499.99, "Xbox", 1000)
 accesorio1 = Accesorio("Control Inalámbrico DualSense", 69.99, "PlayStation", "Control")
 accesorio2 = Accesorio("Headset Inalámbrico Xbox", 99.99, "Xbox", "Audífonos")
 
-
+# ── Instanciación de Usuarios ────────────────────────────────────────────────
+# Creación de usuarios con saldo inicial
 #Instanciamos usuario
 usuario1 = Usuario("Juan", "juan@example.com", 100.00)
 usuario2 = Usuario("Carmilla", "Mariaperez@example.com", 150.00)
@@ -257,6 +185,14 @@ servicio1 = Servicio("Reparación de Consola", "Reparación", 300.00, 20.00, 7, 
 servicio2 = Servicio("Mantenimiento de PC", "Mantenimiento", 200.00, 0.00, 3, False  )
 servicio3 = Servicio("Garantia", "Reparación", 20.00, 10.00, 5, True)
 
+# ── Instanciación de Servicios ───────────────────────────────────────────────
+# Creación de servicios (reparación, mantenimiento, garantía)
+servicio1 = Servicio("Reparación de Consola", "Reparación", 300.00, 20.00, 7, False)
+servicio2 = Servicio("Mantenimiento de PC", "Mantenimiento", 200.00, 0.00, 3, False  )
+servicio3 = Servicio("Garantia", "Reparación", 20.00, 10.00, 5, True)
+
+# ── Función Principal ────────────────────────────────────────────────────────
+# Menú interactivo para la tienda de videojuegos
 def main():#Función principal con menú para la tienda de videojuegos
     
     #Se crean listas para uso mas facil de los juegos/usuarios
@@ -285,12 +221,12 @@ def main():#Función principal con menú para la tienda de videojuegos
         opcion = input("Elige una opción: ") 
         
         #Seleccion
-        if opcion == "1":
+        if opcion == "1": #Opción 1: Mostrar catálogo completo
             print("\n--- CATÁLOGO DE VIDEOJUEGOS ---")
             for i, productos in enumerate(catalogo, 1): #Enumerate para mostrar el numero del juego junto con su información
                 print(f"\n{i}. {productos.mostrar_info()}") 
         
-        elif opcion == "2":
+        elif opcion == "2": #Opción 2: Aplicar descuento a un videojuego
             print("\n--- APLICAR PROMOCIÓN ---")
             for i, juego in enumerate(juegos, 1): #Enumerate para mostrar el numero del juego junto con su título
                 print(f"{i}. {juego.titulo}")
@@ -306,7 +242,7 @@ def main():#Función principal con menú para la tienda de videojuegos
                     print("Opción inválida")#Opcion invalida
         
         elif opcion == "3":
-            print("\n--- AGREGAR PRODUCTO AL CARRITO ---")
+            print("\n--- VERIFICAR COMPRA ---") 
             for i, usuario in enumerate(usuarios, 1): 
                 print(f"{i}. {usuario.nombre} (Saldo: ${usuario.get_saldo():.2f})")
             
@@ -325,38 +261,9 @@ def main():#Función principal con menú para la tienda de videojuegos
                         else:
                             print("Opción inválida")
                     else:
-                        print("Opción inválida")
-                else:
-                    print("Opción inválida")
+                        print("Opción inválida") #Opcion invalida
         
         elif opcion == "4":
-            print("\n--- VER CARRITO ---")
-            for i, usuario in enumerate(usuarios, 1): 
-                print(f"{i}. {usuario.nombre} (Saldo: ${usuario.get_saldo():.2f})")
-            
-            num_usuario = Validador.obtener_numero("Selecciona el número del usuario: ", int)
-            if num_usuario is not None:
-                num_usuario -= 1
-                if 0 <= num_usuario < len(usuarios):
-                    usuario = usuarios[num_usuario]
-                    print(usuario.carrito.mostrar_info())
-                else:
-                    print("Opción inválida")
-        
-        elif opcion == "5":
-            print("\n--- PAGAR CARRITO ---")
-            for i, usuario in enumerate(usuarios, 1): 
-                print(f"{i}. {usuario.nombre} (Saldo: ${usuario.get_saldo():.2f})")
-            
-            num_usuario = Validador.obtener_numero("Selecciona el número del usuario: ", int)
-            if num_usuario is not None:
-                num_usuario -= 1
-                if 0 <= num_usuario < len(usuarios):
-                    usuarios[num_usuario].pagar_carrito()
-                else:
-                    print("Opción inválida")
-        
-        elif opcion == "6":
             print("\n--- AGREGAR SALDO ---")
             for i, usuario in enumerate(usuarios, 1):
                 print(f"{i}. {usuario.nombre} (Saldo: ${usuario.get_saldo():.2f})") #Enumerate para mostrar el numero del usuario junto con su nombre y saldo
@@ -369,8 +276,10 @@ def main():#Función principal con menú para la tienda de videojuegos
                     usuarios[num_usuario].depositar(monto) #Agregamos el saldo al usuario seleccionado
                 else:
                     print("Opción inválida") #Opcion invalida
-        
-        elif opcion == "7":        
+            
+            
+            
+        elif opcion == "5":        
             print("\n¡Hasta luego! Gracias por visitarnos.") #Mensaje de despedida al salir del programa
             break
         
@@ -378,5 +287,7 @@ def main():#Función principal con menú para la tienda de videojuegos
             print("Opción no válida. Intenta de nuevo.")#Mensaje para opciones no válidas en el menú
 
 
+# ── Punto de entrada ─────────────────────────────────────────────────────────
+# Ejecución del programa principal
 if __name__ == "__main__":
     main()  #Llamada a la función principal para iniciar el programa
