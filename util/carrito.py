@@ -1,15 +1,28 @@
+#==============================================================================
+#                  MÓDULO DE GESTIÓN DE CARRITO
+#==============================================================================
+# Este módulo se encarga de manejar el carrito de compras del usuario
+# Permite agregar, visualizar y eliminar productos del carrito
+#==============================================================================
+
 import psycopg2
 from decimal import Decimal
 from .productos import Mostrar_productos, Buscar_producto
 
 
-
+#Función para verificar o crear carrito
 def Verificar_carrito(conexion, id_usuario):
+    """
+    Verifica si el usuario tiene un carrito activo
+    Si no existe, crea uno nuevo y lo retorna
+    Retorna: id_carrito
+    """
     
     try:
         
         cursor = conexion.cursor()
         
+        #consultamos si existe un carrito activo para el usuario
         cursor.execute(""" 
                        SELECT id_carrito
                        FROM carrito 
@@ -24,6 +37,7 @@ def Verificar_carrito(conexion, id_usuario):
         
         else:
             
+            #creamos un nuevo carrito si no existe
             cursor.execute("""
                            INSERT INTO carrito (id_usuario, estado) 
                            VALUES (%s, 'activo') RETURNING id_carrito""",
@@ -38,8 +52,12 @@ def Verificar_carrito(conexion, id_usuario):
         return None
 
 
-
+#Función para agregar productos al carrito
 def Agregar_al_carrito(conexion, id_carrito, id_usuario):
+    """
+    Agrega un producto al carrito del usuario
+    Solicita cantidad y valida disponibilidad de stock
+    """
     
     try:
         
@@ -48,12 +66,14 @@ def Agregar_al_carrito(conexion, id_carrito, id_usuario):
         if id_carrito is None:  
             id_carrito = Verificar_carrito(conexion, id_usuario)
 
+        #obtenemos todos los productos disponibles
         productos_encontrados = Mostrar_productos(conexion)
         
         if not productos_encontrados:
             print("Hubo un error inesperado")
             return
         
+        #mostramos los productos disponibles
         for p in productos_encontrados:
             
             print(f"""Produto: {p['nombre']}
@@ -62,6 +82,7 @@ def Agregar_al_carrito(conexion, id_carrito, id_usuario):
                 Stock:         {p['stock']}""")
         
         nombre_producto = input("¿Qué producto desea agregar al carrito?(solo selecciona uno por su nombre)")
+        #buscamos el producto seleccionado
         productos_encontrados = Buscar_producto(conexion, nombre_producto)
         
         if not productos_encontrados:
@@ -70,17 +91,20 @@ def Agregar_al_carrito(conexion, id_carrito, id_usuario):
         
         producto = productos_encontrados[0]   
         
+        #solicitamos la cantidad
         try:
             cantidad = int(input("¿Cuántos quiere comprar?"))
         except ValueError:
             print("Por favor ingrese solo numeros")
             return
 
+        #validamos que hay suficiente stock
         if cantidad > producto["stock"]:
             
             print("No hay suficiente stock")
             return
 
+        #verificamos si el producto ya está en el carrito
         cursor.execute("""
                        SELECT cantidad
                        FROM detalle_carrito
@@ -94,12 +118,14 @@ def Agregar_al_carrito(conexion, id_carrito, id_usuario):
             
             cantidad_actual = resultado[0]
 
+        #validamos stock total disponible para agregar
         if cantidad_actual + cantidad > producto["stock"]:
             
             print("No hay suficiente stock para agregar esa cantidad al carrito")
             return
         
         else:
+            #agregamos o actualizamos el producto en el carrito
             cursor.execute("""
                            INSERT INTO detalle_carrito (id_carrito, id_producto, cantidad) 
                            VALUES (%s, %s, %s)
@@ -115,12 +141,17 @@ def Agregar_al_carrito(conexion, id_carrito, id_usuario):
         conexion.rollback()
         
 
-
+#Función para visualizar el carrito
 def Ver_carrito(conexion, id_usuario):
+    """
+    Muestra todos los productos en el carrito del usuario
+    Calcula y muestra el total más el IVA
+    """
     
     try:
         
         id_carrito = Verificar_carrito(conexion, id_usuario)
+        #obtenemos los productos del carrito
         productos = Obtener_productos_carrito(conexion, id_carrito)
         
         if not productos:
@@ -152,10 +183,15 @@ Subtotal: ${subtotal:.2f} (mxn)
         print(f"Error al ver el carrito: {e}")
 
 
-
+#Función para obtener productos del carrito
 def Obtener_productos_carrito(conexion, id_carrito):
+    """
+    Obtiene todos los productos que están en el carrito
+    Retorna: Lista de diccionarios con información de productos y cantidades
+    """
     try:
         cursor = conexion.cursor()
+        #consultamos los productos del carrito con sus cantidades y precios
         cursor.execute("""
                        SELECT p.id_producto, p.nombre_producto, dc.cantidad, p.precio, 
                        dc.cantidad * p.precio AS subtotal
@@ -178,8 +214,12 @@ def Obtener_productos_carrito(conexion, id_carrito):
         return None
 
 
-
+#Función para eliminar productos del carrito
 def Eliminar_del_carrito(conexion, usuario_activo, id_carrito):
+    """
+    Permite al usuario eliminar productos de su carrito
+    Muestra opciones para seleccionar cantidad a eliminar
+    """
 
     try:
         
@@ -189,6 +229,7 @@ def Eliminar_del_carrito(conexion, usuario_activo, id_carrito):
 
             id_carrito = Verificar_carrito(conexion, usuario_activo["id_usuario"])
 
+        #obtenemos los productos del carrito
         productos = Obtener_productos_carrito(conexion, id_carrito)
 
         if not productos:
@@ -196,6 +237,7 @@ def Eliminar_del_carrito(conexion, usuario_activo, id_carrito):
             print("Tu carrito esta vacio")
             return
 
+        #mostramos los productos en el carrito
         print("----------Tu carrito----------")
         for i, producto in enumerate(productos, 1):
             print(f"""{i}. Producto/servicio

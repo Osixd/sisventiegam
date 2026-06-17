@@ -1,12 +1,31 @@
+#==============================================================================
+#                   MÓDULO DE PAGOS Y BILLETERA
+#==============================================================================
+# Módulo para manejar billetera digital, consulta de saldo, depósitos y pagos
+# También gestiona el histórico de pedidos del usuario
+#==============================================================================
+
+#Libreria para manejar bases de datos
 import psycopg2
+#Libreria para convertir valores decimales de la BD
 from decimal import Decimal
+#Importación de funciones del módulo carrito
 from util import Verificar_carrito, Obtener_productos_carrito
 
 
-
+#==============================================================================
+#                          FUNCIONES DE BILLETERA
+#==============================================================================
+#Función para verificar o crear billetera
 def Verificar_billetera(conexion, usuario_activo):
+    """
+    Verifica si el usuario tiene una billetera
+    Si no existe, crea una nueva con saldo 0 y la retorna
+    Retorna: Tupla (id_billetera, saldo)
+    """
     try:
         cursor = conexion.cursor()
+        #consultamos si existe billetera para el usuario
         cursor.execute("""
                     SELECT id_billetera, saldo
                     FROM billeteras
@@ -16,6 +35,7 @@ def Verificar_billetera(conexion, usuario_activo):
         saldo_cliente = cursor.fetchone()
         
         if saldo_cliente is None:
+            #creamos una nueva billetera si no existe
             cursor.execute("""
                 INSERT INTO billeteras (id_usuario, saldo)
                 VALUES (%s, 0.00)
@@ -32,7 +52,12 @@ def Verificar_billetera(conexion, usuario_activo):
         return None
 
 
+#Función para obtener saldo
 def Obtener_saldo(conexion, usuario_activo):
+    """
+    Obtiene el saldo actual de la billetera del usuario
+    Retorna: Tupla (id_billetera, saldo)
+    """
     
     try:
         saldo_cliente = Verificar_billetera(conexion, usuario_activo)
@@ -43,8 +68,11 @@ def Obtener_saldo(conexion, usuario_activo):
         return None           
 
 
-
+#Función para consultar saldo
 def Consultar_saldo(conexion, usuario_activo):
+    """
+    Muestra el saldo actual de la billetera del usuario
+    """
     
     try:
         saldo_cliente = Verificar_billetera(conexion, usuario_activo)
@@ -62,8 +90,12 @@ def Consultar_saldo(conexion, usuario_activo):
         return
 
 
-
+#Función para depositar dinero
 def Depositar_saldo(conexion, usuario_activo):
+    """
+    Permite al usuario depositar dinero en su billetera
+    Validación: el monto debe ser mayor que 0
+    """
     
     try:
         saldo_cliente = Verificar_billetera(conexion, usuario_activo)
@@ -75,6 +107,7 @@ def Depositar_saldo(conexion, usuario_activo):
         
         try:
             
+            #solicitamos el monto a depositar
             deposito = float(input("¿Cuánto dinero desea ingresar a su cuenta?"))
             
             if deposito <= 0:
@@ -86,6 +119,7 @@ def Depositar_saldo(conexion, usuario_activo):
             print("Por favor ingresa un numero valido")
             return
         
+        #actualizamos el saldo en la BD
         cursor.execute("""
                        UPDATE billeteras
                        SET saldo = saldo +  %s
@@ -99,8 +133,16 @@ def Depositar_saldo(conexion, usuario_activo):
         return
 
 
+#==============================================================================
+#                          FUNCIONES DE PAGO
+#==============================================================================
 
+#Función para pagar el carrito
 def  Pagar_carrito(usuario_activo, conexion):
+    """
+    Realiza el pago del carrito del usuario
+    Crea un pedido, verifica saldo, descuenta del carrito y actualiza stock
+    """
     
     try:
 
@@ -108,7 +150,9 @@ def  Pagar_carrito(usuario_activo, conexion):
         cursor = conexion.cursor()
         
         id_usuario = usuario_activo["id_usuario"]
+        #verificamos el carrito del usuario
         id_carrito = Verificar_carrito(conexion, id_usuario)
+        #obtenemos los productos del carrito
         objetos_carrito = Obtener_productos_carrito(conexion, id_carrito)
         total = Decimal('0.00')
         
@@ -116,9 +160,11 @@ def  Pagar_carrito(usuario_activo, conexion):
             print("El carrito esta vacío.")
             return
         
+        #calculamos el total
         for producto in objetos_carrito:
             total += producto["subtotal"]
         
+        #verificamos que el usuario tenga saldo suficiente
         saldo_cliente = Obtener_saldo(conexion, usuario_activo)
         
         if saldo_cliente is None:
@@ -131,6 +177,7 @@ def  Pagar_carrito(usuario_activo, conexion):
             print("Saldo insuficiente.")
             return
         
+        #creamos el pedido en la BD
         cursor.execute("""
             INSERT INTO pedidos (id_usuario, total)
             VALUES (%s, %s)
@@ -139,6 +186,7 @@ def  Pagar_carrito(usuario_activo, conexion):
 
         id_pedido = cursor.fetchone()[0]
         
+        #insertamos los detalles de cada producto del pedido
         for producto in objetos_carrito: 
             
             cursor.execute("""
@@ -158,6 +206,7 @@ def  Pagar_carrito(usuario_activo, conexion):
                 producto["precio"]
                 ))
             
+        #actualizamos el stock de cada producto
         for producto in objetos_carrito:
             cursor.execute("""
                     UPDATE productos
@@ -170,24 +219,27 @@ def  Pagar_carrito(usuario_activo, conexion):
                 conexion.rollback()
                 return
         
-            
+        #descontamos del saldo de la billetera    
         cursor.execute("""
                     UPDATE billeteras
                     SET saldo = saldo - %s
                     WHERE id_usuario = %s
                 """, (total, id_usuario))
-                        
+        
+        #registramos el pago en la BD               
         cursor.execute("""
                     INSERT INTO pagos (id_pedido, metodo_pago, monto, estado_pago)
                     VALUES (%s, 'saldo_ficticio', %s, 'aprobado')
                     """, (id_pedido, total))
         
+        #actualizamos el estado del pedido a pagado
         cursor.execute("""
                     UPDATE pedidos
                     SET estado = 'pagado'
                     WHERE id_pedido = %s
                     """, (id_pedido,))
 
+        #actualizamos el estado del carrito a comprado
         cursor.execute("""
                     UPDATE carrito
                     SET estado = 'comprado'
@@ -203,9 +255,15 @@ def  Pagar_carrito(usuario_activo, conexion):
         return  
 
 
+#Función para consultar histórico de pedidos
 def Consultar_historial(conexion, usuario_activo):
+    """
+    Muestra el historial de todos los pedidos realizados por el usuario
+    Muestra: ID pedido, fecha, total y estado
+    """
     try:
         cursor = conexion.cursor()
+        #consultamos todos los pedidos del usuario ordenados por fecha descendente
         cursor.execute("""
             SELECT id_pedido, fecha_pedido, total, estado
             FROM pedidos

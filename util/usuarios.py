@@ -1,17 +1,30 @@
+#==============================================================================
+#                  MÓDULO DE GESTIÓN DE USUARIOS
+#==============================================================================
+# Este módulo se encarga de CRUD de usuarios (crear, leer, actualizar, eliminar)
+# Solo administradores pueden realizar ciertas operaciones
+#==============================================================================
+
 import bcrypt
 import psycopg2
 import getpass
 
 
-
+#Función para mostrar todos los usuarios (solo admin)
 def Mostrar_usuarios(conexion, usuario_activo):
+    """
+    Muestra todos los usuarios registrados en el sistema
+    Solo accesible para usuarios con permisos de admin
+    """
     
     try:
         
         cursor = conexion.cursor()
         
+        #verificamos que sea admin antes de mostrar usuarios
         if usuario_activo['permisos'] == 'admin':
             
+            #consultamos todos los usuarios de la BD
             cursor.execute("""
                            SELECT * 
                            FROM usuarios""")
@@ -31,7 +44,12 @@ def Mostrar_usuarios(conexion, usuario_activo):
 
 
 
+#Función para buscar un usuario específico
 def Buscar_usuario(conexion, usuario):
+    """
+    Busca un usuario por nombre de usuario en la BD
+    Si no existe, ofrece la opción de crear uno nuevo
+    """
     
     if not usuario:
         
@@ -41,6 +59,7 @@ def Buscar_usuario(conexion, usuario):
     try:
         
         cursor = conexion.cursor()
+        #consultamos si existe el usuario en la BD
         cursor.execute("""
                        SELECT * 
                        FROM usuarios 
@@ -65,11 +84,16 @@ def Buscar_usuario(conexion, usuario):
         return
 
 
-
+#Función para agregar un nuevo usuario
 def Agregar_usuario(conexion):
+    """
+    Registra un nuevo usuario en el sistema con validación de datos únicos
+    Encripta la contraseña con bcrypt antes de guardar
+    """
     try:
         cursor = conexion.cursor()
 
+        #bucle para validar que el nombre de usuario sea único
         while True:
             
             NombreUsuario = input("Ingrese el nombre de usuario: ")
@@ -87,6 +111,7 @@ def Agregar_usuario(conexion):
                 
                 break  
 
+        #bucle para validar que el correo sea único
         while True:
             
             Correo = input("Ingrese el correo electrónico: ")
@@ -104,9 +129,11 @@ def Agregar_usuario(conexion):
                 
                 break
 
+        #bucle para validar que las contraseñas coincidan
         while True:
             
             Contrasena = getpass.getpass("Ingrese la contraseña: ")
+            #encriptamos la contraseña con bcrypt
             contrasena_encriptada = bcrypt.hashpw(Contrasena.encode('utf-8'), 
                                                 bcrypt.gensalt()
                                                 ).decode('utf-8')
@@ -123,6 +150,7 @@ def Agregar_usuario(conexion):
         Nombres = input("Ingrese su nombre(s): ")
         Apellido_paterno = input("Ingrese su apellido paterno: ")
         Apellido_materno = input("Ingrese su apellido materno: ")
+        #insertamos el nuevo usuario en la BD
         cursor.execute("""
                        INSERT INTO usuarios (nombre_usuario, nombres, apellido_paterno, apellido_materno, correo, contrasena) 
                        VALUES (%s, %s, %s, %s, %s, %s)""",
@@ -150,11 +178,17 @@ def Agregar_usuario(conexion):
         print(f"Error al agregar el usuario: {e}")
 
 
+#Función para eliminar un usuario (solo admin)
 def Eliminar_usuario(conexion, usuario_activo):
+    """
+    Elimina un usuario del sistema (solo para admin)
+    Requiere confirmación de contraseña por seguridad
+    """
     
     try:
         
         cursor = conexion.cursor()
+        #verificamos la identidad del admin solicitando su contraseña
         admin = input("Ingrese su nombre de usuario para verificar permisos: ")
         cursor.execute("""
                        SELECT contrasena
@@ -169,6 +203,7 @@ def Eliminar_usuario(conexion, usuario_activo):
             print("Contraseña incorrecta.")
             return
         
+        #validamos que sea admin
         if usuario_activo['permisos'] == 'admin':
             
             usuario = input("Ingrese el nombre de usuario a eliminar: ")
@@ -190,6 +225,7 @@ def Eliminar_usuario(conexion, usuario_activo):
                 
                 if confirmacion.lower() in ['si', 'sí', 's']:
                     
+                    #eliminamos el usuario de la BD
                     cursor.execute("""
                                    DELETE FROM usuarios
                                    WHERE nombre_usuario = %s""",

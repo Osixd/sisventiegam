@@ -1,18 +1,30 @@
-from abc import ABC, abstractmethod
+#==============================================================================
+#                   Programa principal/main
+#==============================================================================
+#==============================================================================
+#Aqui se manejan los menús y todo el flujo principal del codigo
+#==============================================================================
+
+# Importamos el archivo de utilidades (modulos)
 from util import *
-from models import *
+#Libreria para limpiar pantalla (solo se ocupa para eso xd)
 import os
 
 
+#==============================================================================
+#                               Menús 
+#==============================================================================
 
+#Función que limpia pantalla ¿Qué hace? ...  Limpia pantalla 
 def clear():
     os.system('cls' if os.name == 'nt' else 'clear')
 
-
+#Función para esperar interaccion y que no se pierdan los datos
 def pausar():
     input("\nPresione Enter para continuar.")
 
-
+#Función que muestra los productos en pantalla
+# (noc pq la hice así ese dia estaba medio dormido) pero funciona asi que no toques
 def imprimir_productos(productos):
     if not productos:
         print("No se encontraron productos.")
@@ -28,39 +40,56 @@ Stock:         {p['stock']}
 """)
 
 
-
+# Primer menu, este solo es el "login", para crear o iniciar sesion
 def Menu_inicio(conexion):
+    
+    # bucle para que se muestre el menú indeterminadamente(solo 3 por los intentos)
     while True:
+        # try except, para casos donde el cliente use char en int, usuario inútil...
         try:
+            #empiezamos limpiandeishon the pantalleishon
             clear()
+            #Una  calida bienvenida
             print("-"*15, "Bienvenido", "-"*15)
+            #primera interaccion
             opcion = int(input("Presione 1 para iniciar seción o 2 para crear una cuenta\n"))
             
+            # opción para iniciar secion.
             if opcion == 1:
                 
+                #Si el resultado devuelve algo es porque devuelve algo.
                 usuario_activo = Login(conexion)
                 
+                #retorna el usuario activo
                 return usuario_activo
                 
+                #opción para crear una nueva cuenta
             elif opcion == 2:
                 
+                #se agrega el nuevo usuario y se solicita volver a iniciar secion.
                 Agregar_usuario(conexion)
                 print("Inicie sesion nuevamente.")
                 pausar()
                 
+                #en caso que el hjp usuario elija algo x.
             else:
                 
+                #escribio mal el hjlv.
                 print("Opción invalida.")
                 pausar()
                 
+        #exepcion para los hjp usuarios que pongan caracteres.
         except:
+            
+            #pide un valor valido
             print("Por favor ingresa un número Entero valido (1-2)")
             pausar()
 
 
-
+#menu principal
 def Menu_principal(conexion, usuario_activo):
     
+    #opciones es un diccionario para facilitar los posibles escenarios.
     opciones = {
     "1": "productos",
     "productos": "productos",
@@ -76,15 +105,17 @@ def Menu_principal(conexion, usuario_activo):
     "salir": "salir"
     }
     
+    #bucle principal.
     while True:
         
+        #try except para errores.
         try:
                 
+            #funcion para limpiar pantalla e imprime el menu inicial.
             clear()
             print("="*50, "\n")
             print("         Menú Principal")
             print("="*50)
-            
             print("""   Por favor selecciona una opción.
                 
 1.- Productos.
@@ -94,19 +125,26 @@ def Menu_principal(conexion, usuario_activo):
 5.- logout (cerrar seción).
 6.- Salir.
                 """)
+            
+            #si el usuario tiene permisos de admin, se agrega a la seleccion una opción "admin"
             if usuario_activo["permisos"] == "admin":
                 print("7.- Panel admin")
                 opciones["7"] = "admin"
                 opciones["admin"] = "admin"
             
+            #esta interaccion automaticamente pone como minusculas las letras
             opcion = input("Selecciona una opción(número o nombre).").strip().lower()
             
+            #si el usuario pone algo que no este en el diccionario, lo imprime.
             if opcion not in opciones:
+                
                 print("Opción invalida.")
                 continue
             
+            #accion es igual a la seleccion en el diccionario
             accion = opciones[opcion]
             
+            #depende de la accion es el siguiente menu
             if accion == "productos":
                 
                 Menu_productos(conexion, usuario_activo)
@@ -125,31 +163,38 @@ def Menu_principal(conexion, usuario_activo):
                 
             elif accion == "logout":
                 
+                #en caso de logout manda al menu.
                 Logout()
                 pausar()
                 return "logout"
                 
             elif accion == "admin":
                 
+                #aqui se accede al menu exclusivo
                 Menu_admin(conexion, usuario_activo)
                 
             elif accion == "salir":
                 
+                #sale del programa
                 return "salir"
             
         except Exception as e:
             
+            #aqui caen los errores y se reinicia el menu
             print(f"Hubo un error inesperado. {e}")
             pausar()
 
 
-
+#Menu para ver, buscar y gestionar productos
+#Si el usuario es admin, tiene opciones adicionales para agregar, actualizar y eliminar productos
 def Menu_productos(conexion, usuario_activo):
     
+    #bucle para que se muestre el menú indeterminadamente
     while True:
         
         try:
             clear()
+            #se define un diccionario con las opciones disponibles
             opciones = {
                 "1": "ver",
                 "ver": "ver",
@@ -164,7 +209,8 @@ def Menu_productos(conexion, usuario_activo):
 2.- Buscar un producto(buscar)
 3.- Salir.
                     """)
-                
+            
+            #si el usuario tiene permisos de admin, se agrega a la seleccion opciones adicionales
             if usuario_activo["permisos"] == "admin":
                 
                 print("4.- Agregar un producto(agregar)")
@@ -177,14 +223,18 @@ def Menu_productos(conexion, usuario_activo):
                 opciones["6"] = "eliminar"
                 opciones["eliminar"] = "eliminar"
             
+            #esta interaccion automaticamente pone como minusculas las letras
             opcion = input("Selecciona una opción(número o nombre).").strip().lower()
             
+            #si el usuario pone algo que no este en el diccionario, lo imprime
             if opcion not in opciones:
                 print("Opción invalida.")
                 continue
             
+            #accion es igual a la seleccion en el diccionario
             accion = opciones[opcion]
             
+            #depende de la accion es la siguiente operacion
             if accion == "ver":
                     
                 productos = Mostrar_productos(conexion)
@@ -222,11 +272,13 @@ def Menu_productos(conexion, usuario_activo):
             print("Ocurrio un error al mostrar los productos")
             pausar()
             return
-            
 
 
+#Menu para gestionar el carrito de compras del usuario
+#Permite ver, agregar, eliminar productos y realizar el pago
 def Menu_carrito(conexion, usuario_activo):
     
+    #opciones es un diccionario para facilitar los posibles escenarios
     opciones = {
         "1": "ver",
         "ver": "ver",
@@ -241,6 +293,7 @@ def Menu_carrito(conexion, usuario_activo):
         "salir": "salir"
     }
 
+    #bucle principal del carrito
     while True:
         
         try:
@@ -256,15 +309,19 @@ def Menu_carrito(conexion, usuario_activo):
 4.- Pagar carrito(pagar)
 5.- Salir.
                     """)
-            opcion = ""
+            
+            #esta interaccion automaticamente pone como minusculas las letras
             opcion = input("Selecciona una opción(número o nombre).").strip().lower()
             
+            #si el usuario pone algo que no este en el diccionario, lo imprime
             if opcion not in opciones:
                 print("Opción invalida.")
                 pausar()
                 continue
             
+            #accion es igual a la seleccion en el diccionario
             accion = opciones[opcion]
+            #obtenemos el id del usuario activo y verificamos su carrito
             id_usuario = usuario_activo["id_usuario"]
             id_carrito = Verificar_carrito(conexion, id_usuario)
             
@@ -298,9 +355,11 @@ def Menu_carrito(conexion, usuario_activo):
             pausar()
 
 
-
+#Menu para gestionar la billetera del usuario
+#Permite consultar el saldo y realizar depositos de dinero
 def Menu_billetera(conexion, usuario_activo):
     
+    #opciones es un diccionario para facilitar los posibles escenarios
     opciones = {
         "1": "consultar",
         "consultar": "consultar",
@@ -311,6 +370,7 @@ def Menu_billetera(conexion, usuario_activo):
         "salir": "salir"
     }
 
+    #bucle principal de la billetera
     while True:
         
         try:
@@ -325,15 +385,19 @@ def Menu_billetera(conexion, usuario_activo):
 3.- Salir.
                     """)
             
+            #esta interaccion automaticamente pone como minusculas las letras
             opcion = input("Selecciona una opción(número o nombre).").strip().lower()
             
+            #si el usuario pone algo que no este en el diccionario, lo imprime
             if opcion not in opciones:
                 print("Opción invalida.")
                 pausar()
                 continue
             
+            #accion es igual a la seleccion en el diccionario
             accion = opciones[opcion]
             
+            #depende de la accion es la siguiente operacion
             if accion == "consultar":
                 
                 Consultar_saldo(conexion, usuario_activo)
@@ -353,14 +417,18 @@ def Menu_billetera(conexion, usuario_activo):
             pausar()
 
 
-
+#Menu del panel admin
+#Solo accesible si el usuario tiene permisos de admin
+#Permite administrar productos y usuarios del sistema
 def Menu_admin(conexion, usuario_activo):
     
+    #verificamos que el usuario tenga permisos de admin antes de continuar
     if usuario_activo["permisos"] != "admin":
         print("No tienes permiso para entrar al panel admin.")
         pausar()
         return
     
+    #opciones es un diccionario para facilitar los posibles escenarios
     opciones = {
         "1": "productos",
         "productos": "productos",
@@ -370,6 +438,7 @@ def Menu_admin(conexion, usuario_activo):
         "salir": "salir"
     }
 
+    #bucle principal del panel admin
     while True:
         
         try:
@@ -384,15 +453,19 @@ def Menu_admin(conexion, usuario_activo):
 3.- Salir.
                     """)
             
+            #esta interaccion automaticamente pone como minusculas las letras
             opcion = input("Selecciona una opción(número o nombre).").strip().lower()
             
+            #si el usuario pone algo que no este en el diccionario, lo imprime
             if opcion not in opciones:
                 print("Opción invalida.")
                 pausar()
                 continue
             
+            #accion es igual a la seleccion en el diccionario
             accion = opciones[opcion]
             
+            #depende de la accion es el siguiente menu
             if accion == "productos":
                 
                 Menu_productos(conexion, usuario_activo)
@@ -411,9 +484,11 @@ def Menu_admin(conexion, usuario_activo):
             pausar()
 
 
-
+#Menu de administración de usuarios
+#Permite ver, buscar, agregar y eliminar usuarios del sistema
 def Menu_usuarios_admin(conexion, usuario_activo):
     
+    #opciones es un diccionario para facilitar los posibles escenarios
     opciones = {
         "1": "ver",
         "ver": "ver",
@@ -427,6 +502,7 @@ def Menu_usuarios_admin(conexion, usuario_activo):
         "salir": "salir"
     }
 
+    #bucle principal de administracion de usuarios
     while True:
         
         try:
@@ -443,15 +519,19 @@ def Menu_usuarios_admin(conexion, usuario_activo):
 5.- Salir.
                     """)
             
+            #esta interaccion automaticamente pone como minusculas las letras
             opcion = input("Selecciona una opción(número o nombre).").strip().lower()
             
+            #si el usuario pone algo que no este en el diccionario, lo imprime
             if opcion not in opciones:
                 print("Opción invalida.")
                 pausar()
                 continue
             
+            #accion es igual a la seleccion en el diccionario
             accion = opciones[opcion]
             
+            #depende de la accion es la siguiente operacion
             if accion == "ver":
                 
                 Mostrar_usuarios(conexion, usuario_activo)
@@ -483,31 +563,42 @@ def Menu_usuarios_admin(conexion, usuario_activo):
             pausar()
 
 
-
-def main():#Función principal con menú para la tienda de videojuegos
+#Función principal con menú para la tienda de videojuegos
+#Gestiona la conexión a la base de datos y controla el flujo general del programa
+def main():
     
-    conexion = Conectar_bd() 
+    #realizamos la conexion a la base de datos
+    conexion = Conectar_bd()
+    #validamos que la conexion sea exitosa
     if conexion is None:
         print("No se pudo conectar a la base de datos. El programa se cerrará.")
-        return 
+        return
     
     try:
         
+        #bucle principal del programa
         while True:
             
+            #menu de inicio y login
             usuario_activo = Menu_inicio(conexion)
             
+            #si el usuario es None, se sale del programa
             if usuario_activo is None:
                 break
             
+            #menu principal donde el usuario puede navegar las diferentes opciones
             accion = Menu_principal(conexion, usuario_activo)
             
+            #si el usuario presiona salir, se cierra el programa
             if accion == "salir":
                 break
             
     finally:
         
-        conexion.close() #Cerramos la conexión a la base de datos al finalizar el programa
+        #cerramos la conexion a la base de datos al finalizar el programa
+        conexion.close()
 
+#Punto de entrada del programa
 if __name__ == "__main__":
-    main()  #Llamada a la función principal para iniciar el programa
+    #Llamada a la función principal para iniciar el programa
+    main()

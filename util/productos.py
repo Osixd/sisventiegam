@@ -1,20 +1,34 @@
+#==============================================================================
+#                  MÓDULO DE GESTIÓN DE PRODUCTOS
+#==============================================================================
+# Este módulo se encarga de CRUD de productos (crear, leer, actualizar, eliminar)
+# Solo administradores pueden agregar, actualizar y eliminar productos
+#==============================================================================
+
 import psycopg2
 import bcrypt
 import getpass
 
 
+#Función para mostrar todos los productos
 def Mostrar_productos(conexion):
+    """
+    Obtiene y retorna todos los productos disponibles con su información
+    Retorna: Lista de diccionarios con datos de productos
+    """
     
     try:
         
         cursor = conexion.cursor()
         
+        #consultamos todos los productos con su categoría
         cursor.execute("""
                        SELECT p.nombre_producto, c.nombre_categoria, p.precio, p.stock, p.descripcion_producto
                        FROM productos p
                        JOIN categorias c ON p.id_categoria = c.id_categoria """)
         datos_producto = cursor.fetchall()
         
+        #convertimos los resultados en una lista de diccionarios
         return [{
             'nombre': row[0],
             'categoria': row[1],
@@ -29,12 +43,18 @@ def Mostrar_productos(conexion):
         return None
 
 
+#Función para buscar un producto específico
 def Buscar_producto(conexion, nombre_producto):
+    """
+    Busca productos por nombre usando búsqueda parcial (ILIKE)
+    Retorna: Lista de diccionarios con productos encontrados
+    """
     
     try:
         
         cursor = conexion.cursor()
         
+        #consultamos productos con búsqueda parcial (insensible a mayúsculas)
         cursor.execute("""
                        SELECT p.nombre_producto, c.nombre_categoria, p.precio, p.id_producto, p.stock
                        FROM productos p
@@ -58,17 +78,24 @@ def Buscar_producto(conexion, nombre_producto):
         return None
     
 
+#Función para agregar un nuevo producto (solo admin)
 def Agregar_producto(conexion, usuario_activo):
+    """
+    Agrega un nuevo producto al sistema (solo admin)
+    Solicita datos del producto y lo inserta en la BD
+    """
     
     try:
         
         permisos = usuario_activo["permisos"]
         
+        #verificamos que sea admin
         if permisos == 'admin':
             
             cursor = conexion.cursor()
             
             nombre_producto = input("Ingrese el nombre del producto: ")
+            #obtenemos las categorías disponibles
             cursor.execute("SELECT nombre_categoria FROM categorias")
             categorias = cursor.fetchall()
             
@@ -77,11 +104,13 @@ def Agregar_producto(conexion, usuario_activo):
                 print("Categoria no encontrada.")
                 return
             
+            #mostramos las categorías disponibles
             for i, cat in enumerate(categorias, 1):
                 
                 print(f"{i}. {cat[0]}")
                 
             categoria = input("Selecciona la categoría: ")
+            #obtenemos el id de la categoría seleccionada
             cursor.execute("""
                            SELECT id_categoria 
                            FROM categorias 
@@ -98,6 +127,7 @@ def Agregar_producto(conexion, usuario_activo):
             descripcion = input("Ingrese la descripción del producto: ")
             precio = float(input("Ingrese el precio del producto: "))
             stock = int(input("Ingrese el stock del producto: "))
+            #insertamos el nuevo producto en la BD
             cursor.execute("""
                            INSERT INTO productos (nombre_producto, id_categoria, plataforma, descripcion_producto, precio, stock)
                            VALUES (%s, %s, %s, %s, %s, %s)""", 
@@ -116,12 +146,18 @@ def Agregar_producto(conexion, usuario_activo):
         print(f"Error al agregar el producto: {e}")
         
         
+#Función para actualizar un producto (solo admin)
 def Actualizar_producto(conexion, usuario_activo):
+    """
+    Permite actualizar los datos de un producto existente (solo admin)
+    Requiere confirmación de contraseña por seguridad
+    """
     
     try:
         
         cursor = conexion.cursor()
         
+        #verificamos la identidad del admin solicitando su contraseña
         cursor.execute("""
                        SELECT contrasena
                        FROM usuarios 
@@ -135,9 +171,11 @@ def Actualizar_producto(conexion, usuario_activo):
             print("Contraseña incorrecta.")
             return    
 
+        #validamos que sea admin
         if usuario_activo["permisos"]== 'admin':
             
             nombre_producto = input("Ingrese el nombre del producto a actualizar: ")
+            #buscamos el producto en la BD
             cursor.execute("""
                            SELECT id_producto 
                            FROM productos 
@@ -149,6 +187,7 @@ def Actualizar_producto(conexion, usuario_activo):
             
             if confirmacion.lower() in ['s', 'sí', 'si']:
                 
+                #solicitamos qué dato actualizar
                 dato_cambiar = input("Ingrese el dato que desea actualizar \n(nombre/categoria/plataforma/descripcion/precio/stock): ")
                 
                 if dato_cambiar.lower() == "nombre":
@@ -161,6 +200,7 @@ def Actualizar_producto(conexion, usuario_activo):
                     
                 elif dato_cambiar.lower() == "categoria":
                     
+                    #mostramos categorías disponibles
                     cursor.execute("""
                                    SELECT nombre_categoria 
                                    FROM categorias""")
@@ -170,6 +210,7 @@ def Actualizar_producto(conexion, usuario_activo):
                         
                         print(f"{i}. {cat[0]}")
                     nueva_categoria = input("Ingrese la nueva categoría del producto: ")
+                    #obtenemos el id de la nueva categoría
                     cursor.execute("""
                                    SELECT id_categoria 
                                    FROM categorias 
@@ -233,11 +274,17 @@ def Actualizar_producto(conexion, usuario_activo):
 
 
 
+#Función para eliminar un producto (solo admin)
 def Eliminar_producto(conexion, usuario_activo):
+    """
+    Elimina un producto del sistema (solo admin)
+    Requiere confirmación de contraseña por seguridad
+    """
     
     try:
         
         cursor = conexion.cursor()
+        #verificamos la identidad del admin solicitando su contraseña
         cursor.execute("""
                        SELECT contrasena 
                        FROM usuarios
@@ -251,9 +298,11 @@ def Eliminar_producto(conexion, usuario_activo):
             print("Contraseña incorrecta.")
             return    
 
+        #validamos que sea admin
         if usuario_activo["permisos"] == 'admin':
             
             nombre_producto = input("Ingrese el nombre del producto a eliminar: ")
+            #buscamos el producto en la BD
             cursor.execute("""
                            SELECT id_producto
                            FROM productos 

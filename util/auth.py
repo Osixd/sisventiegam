@@ -1,10 +1,22 @@
+#==============================================================================
+#                     MÓDULO DE AUTENTICACIÓN
+#==============================================================================
+# Este módulo se encarga de manejar login, logout y verificación de permisos
+# Utiliza bcrypt para encriptación de contraseñas
+#==============================================================================
+
 import bcrypt
 import getpass
 
 
-
+#Función para iniciar sesión
 def Login(conexion):
+    """
+    Permite a un usuario iniciar sesión en el sistema
+    Retorna: Un diccionario con datos del usuario o None si falla
+    """
     
+    #número de intentos permitidos
     intentos = 3
     cursor = conexion.cursor()
     
@@ -13,7 +25,9 @@ def Login(conexion):
         try:
             
             nombre_usuario = input("Ingrese su nombre de usuario: ")
+            #solicitamos la contraseña sin mostrar en pantalla
             contrasena = getpass.getpass("Ingrese su contraseña: ")
+            #consultamos en la BD si existe el usuario
             cursor.execute("""
                            SELECT contrasena, id_usuario, permisos 
                            FROM usuarios 
@@ -21,9 +35,11 @@ def Login(conexion):
                            (nombre_usuario,))
             resultado = cursor.fetchone()
             
+            #verificamos la contraseña encriptada con bcrypt
             if resultado is not None and bcrypt.checkpw(contrasena.encode('utf-8'), resultado[0].encode('utf-8')):
                 
                 print("Inicio de sesión exitoso.")
+                #retornamos los datos del usuario autenticado
                 return {
                     "nombre_usuario": nombre_usuario,
                     "id_usuario": resultado[1],
@@ -50,17 +66,26 @@ def Login(conexion):
             return None
 
 
-
+#Función para cerrar sesión
 def Logout():
+    """
+    Realiza el logout del usuario mostrando un mensaje de confirmación
+    """
     
     print("Has cerrado sesión exitosamente.")
     return None
 
-def Verificar_permisos(conexion, usuario): #Esta funcion se utilizaba antes, despues se volvio inutil.
+#Función para verificar permisos (obsoleta)
+def Verificar_permisos(conexion, usuario):
+    """
+    Verifica los permisos de un usuario en la BD
+    Nota: Esta función se utilizaba antes y ahora es innecesaria ya que se integró en Login
+    """
     
     try:
         
         cursor = conexion.cursor()
+        #consultamos el nivel de permisos del usuario
         cursor.execute("""
                        SELECT permisos 
                        FROM usuarios 
